@@ -2,6 +2,34 @@ from copy import deepcopy
 import datetime
 
 
+"""
+## useful for comparing a `response.json()` with what you want in test cases.
+
+person_schema = Schema({
+    "name": str,
+    "birthdate": datetime.date,
+    "alias": (str, None),
+})
+
+bobby = {
+    "name": "Bobby",
+    "birthdate": datetime.date(2000, 1, 1),
+    "alias": 'Bob',
+}
+carol = {
+    "name": "Carol",
+    "birthdate": datetime.date(2000, 1, 1),
+    "alias": None,
+}
+
+assert bobby == person_schema
+assert carol == person_schema
+
+assert bobby == person_schema(name='Bobby')
+assert carol != person_schema(name='Bobby')
+"""
+
+
 class Schema():
     "A schema is a JSON that knows how to compare himself with a similar JSON"
     def __init__(self, schema):
@@ -15,10 +43,12 @@ class Schema():
         return True
 
     def one(self, **kwargs):
+        "returns a copy with modifications"
         schema = deepcopy(self.schema)
         return Schema(update_schema(schema, kwargs))
     
     def many(self, *args, **kwargs):
+        "returns a schema with many copies"
         schema = deepcopy(self.schema)
         return Schema([update_schema(schema, data, **kwargs) for data in args])
 
@@ -30,6 +60,7 @@ class Schema():
 
 
 def _schema_to_str(data) -> str:
+    "similar to str(list) but I dont want to show `<type: int>` for types."
     if isinstance(data, dict):
         l = [f'{k}: {_schema_to_str(v)}' for k, v in data.items()]
         s = ', '.join(l)
@@ -64,6 +95,7 @@ def update_schema(schema, data, more_data=None):
 
 
 def is_isoformat(value, type):
+    "True if a string is isoformat for date or datetime"
     if not isinstance(value, str):
         return False
     try:
@@ -74,6 +106,7 @@ def is_isoformat(value, type):
 
 
 def match_schema(got, want):
+    "True if you got what you want"
     if want in [int, str, float, bool, list, dict, object]:
         return isinstance(got, want)
     if want in [datetime.date, datetime.datetime]:
